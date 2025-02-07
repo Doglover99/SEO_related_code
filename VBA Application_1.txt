@@ -1,0 +1,93 @@
+
+Sub ddformat()
+    Dim ws As Worksheet
+    Set ws = ActiveSheet 
+
+    Dim LastRow As Long
+    Dim LastCol As Long
+    LastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    LastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+    Dim cell As Range
+
+    For Each cell In ws.UsedRange
+        If Not IsEmpty(cell.Value) Then
+            cell.Value = UCase(cell.Value)
+        End If
+    Next cell
+
+    ws.UsedRange.Font.Name = "Calibri"
+    ws.UsedRange.Font.Size = 12
+
+    For Each cell In ws.UsedRange
+        cell.HorizontalAlignment = xlCenter
+    Next cell
+ 
+    With ws.Range(ws.Cells(1, 1), ws.Cells(LastRow, LastCol)).Borders
+        .LineStyle = xlContinuous
+        .Weight = xlThin
+    End With
+
+    Dim StatusColumn As Range
+    Dim UpdatedColumn As Range
+    Dim i As Long
+
+    With ws
+        LastRow = .Cells(.Rows.Count, "C").End(xlUp).Row
+        Set StatusColumn = .Range("C2:C" & LastRow)
+        Set UpdatedColumn = .Range("D2:D" & LastRow)
+    End With
+    
+    For i = 1 To LastRow - 1
+        If StatusColumn.Cells(i, 1).Value = "CLOSED" Then
+            UpdatedColumn.Cells(i, 1).Value = "" 
+            UpdatedColumn.Cells(i, 1).Interior.Color = RGB(174, 170, 170) 
+        StatusColumn.Cells(i, 1).Interior.Color = RGB(174, 170, 170)
+    ElseIf StatusColumn.Cells(i, 1).Value = "IN PROGRESS" Then
+        StatusColumn.Cells(i, 1).Interior.Color = RGB(226, 239, 218)
+    ElseIf StatusColumn.Cells(i, 1).Value = "FIXED" Then
+        StatusColumn.Cells(i, 1).Interior.Color = RGB(211, 181, 233)
+    ElseIf StatusColumn.Cells(i, 1).Value = "OPEN" Then
+        StatusColumn.Cells(i, 1).Interior.Color = RGB(255, 221, 221)
+    ElseIf StatusColumn.Cells(i, 1).Value = "TO DO" Then
+        StatusColumn.Cells(i, 1).Interior.Color = RGB(252, 228, 214)
+    ElseIf StatusColumn.Cells(i, 1).Value = "TESTING" Then
+        StatusColumn.Cells(i, 1).Interior.Color = RGB(221, 235, 247)
+    ElseIf StatusColumn.Cells(i, 1).Value = "FEEDBACK" Then
+        StatusColumn.Cells(i, 1).Interior.Color = RGB(190, 200, 248)
+    ElseIf StatusColumn.Cells(i, 1).Value = "AWAITING INFO" Then
+        StatusColumn.Cells(i, 1).Interior.Color = RGB(255, 242, 204)
+        End If
+    Next i
+
+    Dim Clean As String
+    Dim j As Integer
+    Dim rngCell As Range
+
+    With ws
+        LastRow = .Cells(.Rows.Count, "C").End(xlUp).Row 
+        Set StatusColumn = .Range("C2:C" & LastRow) 
+        Set AssigneeColumn = .Range("E2:E" & LastRow) 
+    End With
+  
+    For Each rngCell In AssigneeColumn
+        Clean = ""
+        For j = 1 To Len(rngCell.Value)
+            If (AscW(Mid(rngCell.Value, j, 1)) >= 65 And AscW(Mid(rngCell.Value, j, 1)) <= 90) Or _
+               (AscW(Mid(rngCell.Value, j, 1)) >= 97 And AscW(Mid(rngCell.Value, j, 1)) <= 122) Or _
+               (AscW(Mid(rngCell.Value, j, 1)) >= 48 And AscW(Mid(rngCell.Value, j, 1)) <= 57) Then
+                Clean = Clean & Mid(rngCell.Value, j, 1)
+            End If
+        Next j
+        rngCell.Value = Clean
+    Next rngCell
+    
+    For i = 1 To LastRow - 1
+        If StatusColumn.Cells(i, 1).Value = "FEEDBACK" And AssigneeColumn.Cells(i, 1).Value = "BETTYKYLIN" Then
+        StatusColumn.Cells(i, 1).AddComment "Betty"
+        ElseIf StatusColumn.Cells(i, 1).Value = "FEEDBACK" And AssigneeColumn.Cells(i, 1).Value = "STEVECHU" Then
+        StatusColumn.Cells(i, 1).AddComment "Steve"
+        End If
+    Next i
+    ws.Range("D2:D" & LastRow).NumberFormat = "yyyy-mm-dd"
+    ws.Range("I2:I" & LastRow).NumberFormat = "yyyy-mm-dd"    
+End Sub

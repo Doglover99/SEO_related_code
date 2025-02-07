@@ -1,0 +1,148 @@
+先隨便新增一個excel檔，打開VBA
+要先更改
+1.excel檔的路徑
+-----------------------------------------------------------------------------------------------------------------------------------------
+
+Sub RenameExcelFilesAndFormat()
+    Dim FolderPath As String
+    Dim AAAFilePath As String
+    Dim wbAAA As Workbook
+    Dim AAAWorksheet As Worksheet
+    Dim RowNum As Long
+    Dim File As String
+    
+    ' 選取資料夾
+    Dim xFd As FileDialog
+    Dim xFdItem As Variant
+    Set xFd = Application.FileDialog(msoFileDialogFolderPicker)
+    If xFd.Show = -1 Then
+        FolderPath = xFd.SelectedItems(1) & Application.PathSeparator
+    Else
+        Exit Sub ' 使用者取消選取資料夾，退出子程序
+    End If
+    
+    ' 指定AAA工作簿路徑
+    AAAFilePath = "C:\Users\jd_wu\Desktop\issues_overview_report_rog_N.xlsx" ' 替換為您的AAA工作簿路徑
+    
+    ' 開啟AAA工作簿
+    Set wbAAA = Workbooks.Open(AAAFilePath)
+    Set AAAWorksheet = wbAAA.Sheets(1) ' 根據工作表名稱調整
+    
+    ' 從第2行開始，因為第1行可能是標題
+    RowNum = 2
+    
+    ' 循環處理AAA工作表中的資料
+    Do While AAAWorksheet.Cells(RowNum, 1).Value <> ""
+        OldFileName = AAAWorksheet.Cells(RowNum, 3).Value ' 舊檔名
+        NewFileName = AAAWorksheet.Cells(RowNum, 4).Value ' 新檔名
+        
+        ' 在資料夾中尋找符合條件的檔案
+        File = Dir(FolderPath & OldFileName & "*.xlsx")
+        Do While File <> ""
+            ' 將找到的檔案名稱更改為新檔名
+            Name FolderPath & File As FolderPath & NewFileName & ".xlsx"
+            File = Dir ' 尋找下一個檔案
+        Loop
+        
+        ' 處理下一個資料
+        RowNum = RowNum + 1
+    Loop
+    
+    ' 關閉AAA工作簿
+    wbAAA.Close SaveChanges:=False
+    
+    ' 循環處理資料夾中的檔案
+    Dim xFileName As String
+    xFileName = Dir(FolderPath & "*.xlsx*")
+    Do While xFileName <> ""
+        With Workbooks.Open(FolderPath & xFileName)
+            Dim ws As Worksheet
+            Set ws = ActiveSheet ' 可以更改為特定的工作表名稱
+
+            ' 設定格式等操作...
+            ' 設定第一列列高為 21
+            ws.Rows(1).RowHeight = 21
+            
+            ' 設定第一欄欄寬為 65.89
+            ws.Columns(1).ColumnWidth = 65.89
+            
+            ' 將第一欄按照 A-Z 排序
+            ws.Range("A1").CurrentRegion.Sort key1:=ws.Range("A1"), order1:=xlAscending, Header:=xlYes
+            
+            ' 尋找最後使用的列和行
+            Dim LastRow As Long
+            Dim LastCol As Long
+            LastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+            LastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+            
+            ' 設定字體為 Calibri
+            ws.UsedRange.Font.Name = "Calibri"
+            
+            ' 將數字欄位設定水平對齊為置中，其他欄位向左對齊
+            Dim cell As Range
+            For Each cell In ws.UsedRange
+                If IsNumeric(cell.Value) Then
+                    cell.HorizontalAlignment = xlCenter
+                    ' 將數字顯示到小數點第二位（僅在有超過小數點第二位時）
+                    If InStr(cell.Value, ".") > 0 Then
+                        Dim decimalPart As String
+                        decimalPart = Mid(cell.Value, InStr(cell.Value, ".") + 1)
+                        If Len(decimalPart) > 2 Then
+                            cell.NumberFormat = "0.00"
+                        End If
+                    End If
+                Else
+                    cell.HorizontalAlignment = xlLeft
+                End If
+            Next cell
+            
+            ' 設定每個有資料的欄的欄寬等於該欄第一列的字符字數 + 0.5
+            Dim col As Long
+            For col = 2 To LastCol
+                If WorksheetFunction.CountA(ws.Columns(col)) > 0 Then
+                    ws.Columns(col).ColumnWidth = Len(ws.Cells(1, col).Value) + 0.5
+                End If
+            Next col
+            
+            ' 加框線，最外圈粗線，其他一般線
+            With ws.Range(ws.Cells(1, 1), ws.Cells(LastRow, LastCol)).Borders
+                .LineStyle = xlContinuous
+                .Weight = xlThin
+            End With
+            With ws.Range(ws.Cells(1, 1), ws.Cells(LastRow, LastCol)).Borders(xlEdgeTop)
+                .Weight = xlThick
+            End With
+            With ws.Range(ws.Cells(1, 1), ws.Cells(LastRow, LastCol)).Borders(xlEdgeBottom)
+                .Weight = xlThick
+            End With
+            With ws.Range(ws.Cells(1, 1), ws.Cells(LastRow, LastCol)).Borders(xlEdgeLeft)
+                .Weight = xlThick
+            End With
+            With ws.Range(ws.Cells(1, 1), ws.Cells(LastRow, LastCol)).Borders(xlEdgeRight)
+                .Weight = xlThick
+            End With
+            
+            ' 第一列黑色填充，白色粗體字體
+            With ws.Range(ws.Cells(1, 1), ws.Cells(1, LastCol))
+                .Interior.Color = RGB(0, 0, 0) ' 黑色填充
+                .Font.Color = RGB(255, 255, 255) ' 白色字體
+                .Font.Bold = True ' 粗體字體
+            End With
+            
+            ' 刪除僅有第一列有資料且以下無資料的欄位
+            Dim i As Long
+            For i = LastCol To 2 Step -1
+                If WorksheetFunction.CountA(ws.Columns(i)) = 1 And ws.Cells(1, i).Value <> "" Then
+                    ws.Columns(i).Delete
+                End If
+            Next i
+
+            ws.Cells(2, 2).Select ' 選擇B2以重新凍結
+            ActiveWindow.FreezePanes = True
+
+            ' 保存並關閉工作簿
+            .Close SaveChanges:=True
+        End With
+        xFileName = Dir
+    Loop
+End Sub

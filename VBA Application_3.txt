@@ -1,0 +1,328 @@
+注意事項
+1.更改國家，網站：reName = Index & "_" & reNameIndex & "_TW_official"
+2.Missing Alt Attribute & Text:要用手動Excel函式計算=SUMPRODUCT(1/COUNTIF(A2:A32188,A2:A32188))，一開始會出現0，給點時間跑
+
+SEMrush：
+3.HTTP URLs = HTTPS pages leads to HTTP page
+4.8_duplicate_content
+5.2-2_http_urls
+6.structured data items are invalid => 11_fix_invalid_items
+
+AOCC：
+7.1_core_web_vitals
+
+Page_type以下issue需要
+1 core web vitals
+2-1_mixed_content
+2-2 http_urls
+4-1_internal_client_error_(4xx)
+4-2_internal_no_response
+4-3_internal_blocked_by_robots_txt
+5-1_urls_not_in_sitemap
+5-2_nonindexable_urls_in_sitemap
+7-1_nonindexable_canonical
+7-2_canonicals_missing
+8 duplicate content
+9-1_missing_head_tag
+9-2_missing_body_tag
+9-3_multiple_head_tags
+9-4_multiple_body_tags
+9-5_head_not_first_in_html_element
+9-6_invalid_html_elements_in_head
+9-7_body_element_preceding_html
+10-1_multiple_titles
+10-4_meta_description_multiple
+11 invalid items
+
+
+Page_type以下issue不用
+3_directives_noindex
+4-4_internal_redirect_chain_inlinks
+4-5_internal_redirect_loop_inlinks
+5-3_sitemaps_orphan_urls
+6-1_Hreflang: Incorrect Language & Region Codes
+6-2_Hreflang: Multiple Entries
+6-3_Non-200 hreflang URLs
+6-4_Hreflang: Not Using Canonical
+10-2_page_title_missing
+10-3_page_titles_duplicate
+10-5_meta_description_missing
+10-6_meta_description_duplicate
+10-7_h1_multiple
+10-8_h1_missing
+10-9_h1_duplicate
+12_image_missing_alt_attribute_text_inlinks
+
+
+-----------------------------------------------------------------------------------------------------
+
+Sub ProcessData()
+    Dim ws As Worksheet
+    Dim lastRow As Long
+    Dim issueNameCol As Long
+    Dim urlsCol As Long
+    Dim indexCol As Long
+    Dim reNameCol As Long
+    Dim newNameCol As Long
+    Dim i As Long
+
+
+    
+    Country_Web = "_PH_Official"
+   
+    ' Set the worksheet where the data is located
+    Set ws = ActiveSheet
+    
+    ' Find the last row in the worksheet
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    
+    ' Find the column number for the 'Issue Name' column
+    issueNameCol = Application.Match("Issue Name", ws.Rows(1), 0)
+    urlsCol = Application.Match("URLs", ws.Rows(1), 0)
+    
+    ' Delete other columns except 'Issue Name' and 'URLs'
+    For col = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column To 1 Step -1
+        If col <> issueNameCol And col <> urlsCol Then
+            ws.Columns(col).Delete
+        End If
+    Next col
+         
+    ' Add columns for index and new_name
+    reNameCol = ws.Cells(1, ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column + 1).Column
+    newNameCol = ws.Cells(1, ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column + 2).Column
+    
+    ' Set headers for new columns
+    ws.Cells(1, reNameCol).Value = "rename index"
+    ws.Cells(1, newNameCol).Value = "new_name"
+    
+    ' Set entire columns format as text
+    ws.Columns(reNameCol).NumberFormat = "@"
+    ws.Columns(newNameCol).NumberFormat = "@"
+    
+    ' Process each row
+    For i = 2 To lastRow
+        Dim issueName As String
+        Dim reNameValue As String
+        Dim newNameValue As String
+        
+        ' Get the value from the 'Issue Name' column
+        issueName = ws.Cells(i, issueNameCol).Value
+        
+        ' Check conditions and set indexValue and newNameValue accordingly
+        If InStr(issueName, "Mixed Content") > 0 Then
+            reNameValue = "mixed_content"
+            newNameValue = "2-1_mixed_content" & Country_Web
+        ElseIf InStr(issueName, "Noindex") > 0 And InStr(issueName, "Directives") > 0 Then
+            reNameValue = "directives_noindex"
+            newNameValue = "3_noindex" & Country_Web
+        ElseIf InStr(issueName, "Response Codes") > 0 And InStr(issueName, "(4xx)") > 0 And InStr(issueName, "Internal") > 0 Then
+            reNameValue = "internal_client_error_(4xx)_inlinks"
+            newNameValue = "4-1_internal_client_error_(4xx)" & Country_Web
+        ElseIf InStr(issueName, "Internal No Response") > 0 Then
+            reNameValue = "internal_no_response_inlinks"
+            newNameValue = "4-2_internal_no_response" & Country_Web
+        ElseIf InStr(issueName, "Blocked by Robots.txt") > 0 Then
+            reNameValue = "internal_blocked_by_robots_txt_inlinks"
+            newNameValue = "4-3_internal_blocked_by_robots_txt" & Country_Web
+        ElseIf InStr(issueName, "Redirect Chain") > 0 Then
+            reNameValue = "internal_redirect_chain_inlinks"
+            newNameValue = "4-4_redirect_chain" & Country_Web
+        ElseIf InStr(issueName, "Redirect Loop") > 0 Then
+            reNameValue = "internal_redirect_loop_inlinks"
+            newNameValue = "4-5_redirect_loop" & Country_Web
+        ElseIf InStr(issueName, "URLs not in Sitemap") > 0 Then
+            reNameValue = "sitemaps_urls_not_in_sitemap"
+            newNameValue = "5-1_urls_not_in_sitemap" & Country_Web
+        ElseIf InStr(issueName, "Non-Indexable URLs in Sitemap") > 0 Then
+            reNameValue = "nonindexable_urls_in_sitemap_inlinks"
+            newNameValue = "5-2_nonindexable_urls_in_sitemap" & Country_Web
+        ElseIf InStr(issueName, "Orphan") > 0 Then
+            reNameValue = "sitemaps_orphan_urls"
+            newNameValue = "5-3_orphan_urls" & Country_Web
+        ElseIf InStr(issueName, "Incorrect Language & Region Codes") > 0 Then
+            reNameValue = "hreflang_incorrect_language_region_codes"
+            newNameValue = "6-1_incorrect_language_region_codes" & Country_Web
+        ElseIf InStr(issueName, "Multiple Entries") > 0 Then
+            reNameValue = "hreflang_multiple_entries"
+            newNameValue = "6-2_multiple_entries" & Country_Web
+        ElseIf InStr(issueName, "Hreflang") > 0 And InStr(issueName, "200") > 0 Then
+            reNameValue = "hreflang_non200_hreflang_urls"
+            newNameValue = "6-3_non200_hreflang_urls" & Country_Web
+        ElseIf InStr(issueName, "Not Using Canonical") > 0 Then
+            reNameValue = "hreflang_not_using_canonical"
+            newNameValue = "6-4_not_using_canonical" & Country_Web
+        ElseIf InStr(issueName, "Non-Indexable Canonical") > 0 Then
+            reNameValue = "canonicals_nonindexable_canonical"
+            newNameValue = "7-1_nonindexable_canonical" & Country_Web
+        ElseIf InStr(issueName, "Canonicals") > 0 And InStr(issueName, "Missing") > 0 Then
+            reNameValue = "canonicals_missing"
+            newNameValue = "7-2_canonicals_missing" & Country_Web
+        ElseIf InStr(issueName, "Validation") > 0 And InStr(issueName, "Missing") > 0 And InStr(issueName, "head") > 0 And InStr(issueName, "Tag") > 0 Then
+            reNameValue = "validation_missing_head_tag"
+            newNameValue = "9-1_missing_head_tag" & Country_Web
+        ElseIf InStr(issueName, "Validation") > 0 And InStr(issueName, "Missing") > 0 And InStr(issueName, "body") > 0 And InStr(issueName, "Tag") > 0 Then
+            reNameValue = "validation_missing_body_tag"
+            newNameValue = "9-2_missing_body_tag" & Country_Web
+        ElseIf InStr(issueName, "Validation") > 0 And InStr(issueName, "Multiple") > 0 And InStr(issueName, "head") > 0 And InStr(issueName, "Tags") > 0 Then
+            reNameValue = "validation_multiple_head_tags"
+            newNameValue = "9-3_multiple_head_tags" & Country_Web
+        ElseIf InStr(issueName, "Validation") > 0 And InStr(issueName, "Multiple") > 0 And InStr(issueName, "body") > 0 And InStr(issueName, "Tags") > 0 Then
+            reNameValue = "validation_multiple_body_tags"
+            newNameValue = "9-4_multiple_body_tags" & Country_Web
+        ElseIf InStr(issueName, "Validation") > 0 And InStr(issueName, "Not First In") > 0 And InStr(issueName, "head") > 0 And InStr(issueName, "Element") And InStr(issueName, "html") > 0 Then
+            reNameValue = "validation_head_not_first_in_html_element"
+            newNameValue = "9-5_head_not_first_in_html_element" & Country_Web
+        ElseIf InStr(issueName, "Invalid HTML Elements in Head") > 0 Then
+            reNameValue = "validation_invalid_html_elements_in_head"
+            newNameValue = "9-6_invalid_html_elements_in_head" & Country_Web
+        ElseIf InStr(issueName, "Element Preceding") > 0 Then
+            reNameValue = "validation_body_element_preceding_html"
+            newNameValue = "9-7_body_element_preceding_html" & Country_Web
+
+        ElseIf InStr(issueName, "Titles") > 0 And InStr(issueName, "Multiple") > 0 Then
+            reNameValue = "page_titles_multiple"
+            newNameValue = "10-1_multiple_titles" & Country_Web
+        ElseIf InStr(issueName, "Titles") > 0 And InStr(issueName, "Missing") > 0 Then
+            reNameValue = "page_titles_missing"
+            newNameValue = "10-2_missing_titles" & Country_Web
+        ElseIf InStr(issueName, "Titles") > 0 And InStr(issueName, "Duplicate") > 0 Then
+            reNameValue = "page_titles_duplicate"
+            newNameValue = "10-3_duplicate_titles" & Country_Web
+        ElseIf InStr(issueName, "Meta Description") > 0 And InStr(issueName, "Multiple") > 0 Then
+            reNameValue = "meta_description_multiple"
+            newNameValue = "10-4_meta_description_multiple" & Country_Web
+        ElseIf InStr(issueName, "Meta Description") > 0 And InStr(issueName, "Missing") > 0 Then
+            reNameValue = "meta_description_missing"
+            newNameValue = "10-5_meta_description_missing" & Country_Web
+        ElseIf InStr(issueName, "Meta Description") > 0 And InStr(issueName, "Duplicate") > 0 Then
+            reNameValue = "meta_description_duplicate"
+            newNameValue = "10-6_meta_description_duplicate" & Country_Web
+        ElseIf InStr(issueName, "H1") > 0 And InStr(issueName, "Multiple") > 0 Then
+            reNameValue = "h1_multiple"
+            newNameValue = "10-7_h1_multiple" & Country_Web
+        ElseIf InStr(issueName, "H1") > 0 And InStr(issueName, "Missing") > 0 Then
+            reNameValue = "h1_missing"
+            newNameValue = "10-8_h1_missing" & Country_Web
+        ElseIf InStr(issueName, "H1") > 0 And InStr(issueName, "Duplicate") > 0 Then
+            reNameValue = "h1_duplicate"
+            newNameValue = "10-9_h1_duplicate" & Country_Web
+        Else
+            reNameValue = " "
+            newNameValue = " "
+        End If
+        
+        ' Write values to index and new_name columns
+        ws.Cells(i, reNameCol).Value = reNameValue
+        ws.Cells(i, newNameCol).Value = newNameValue
+        
+        ' Apply gray background if needed
+        If reNameValue = " " Then
+            ws.Cells(i, reNameCol).Interior.Color = RGB(192, 192, 192) ' Gray color
+            ws.Cells(i, newNameCol).Interior.Color = RGB(192, 192, 192)
+        End If
+    Next i
+    
+    ' Sort the data based on the desired order of values
+    ws.Sort.SortFields.Clear
+
+    
+    With ws.Sort
+        .SetRange ws.Range(ws.Cells(1, 1), ws.Cells(lastRow, reNameCol + 2))
+        .Header = xlYes
+        .MatchCase = False
+        .Orientation = xlTopToBottom
+        .SortMethod = xlPinYin
+        .Apply
+    End With
+    
+    ' Find the row number of the last non-gray row
+    Dim lastNonGrayRow As Long
+    For i = lastRow To 2 Step -1
+        If ws.Cells(i, reNameCol).Interior.Color <> RGB(192, 192, 192) Then
+            lastNonGrayRow = i
+            Exit For
+        End If
+    Next i
+    
+    ' Move the gray rows to the end
+    For i = lastNonGrayRow To 2 Step -1
+        If ws.Cells(i, reNameCol).Interior.Color = RGB(192, 192, 192) Then
+            ws.Rows(i).Cut
+            ws.Rows(lastNonGrayRow + 1).Insert Shift:=xlDown
+        End If
+    Next i
+    
+    For i = 2 To lastRow
+        If ws.Cells(i, "C").Value = "mixed_content" Then
+            ws.Cells(i, "B").Copy ws.Cells(2, "E")
+        ElseIf ws.Cells(i, "C").Value = "directives_noindex" Then
+            ws.Cells(i, "B").Copy ws.Cells(4, "E")
+        ElseIf ws.Cells(i, "C").Value = "internal_client_error_(4xx)_inlinks" Then
+            ws.Cells(i, "B").Copy ws.Cells(5, "E")
+        ElseIf ws.Cells(i, "C").Value = "internal_no_response_inlinks" Then
+            ws.Cells(i, "B").Copy ws.Cells(6, "E")
+        ElseIf ws.Cells(i, "C").Value = "internal_blocked_by_robots_txt_inlinks" Then
+            ws.Cells(i, "B").Copy ws.Cells(7, "E")
+        ElseIf ws.Cells(i, "C").Value = "internal_redirect_chain_inlinks" Then
+            ws.Cells(i, "B").Copy ws.Cells(8, "E")
+        ElseIf ws.Cells(i, "C").Value = "internal_redirect_loop_inlinks" Then
+            ws.Cells(i, "B").Copy ws.Cells(9, "E")
+        ElseIf ws.Cells(i, "C").Value = "sitemaps_urls_not_in_sitemap" Then
+            ws.Cells(i, "B").Copy ws.Cells(10, "E")
+        ElseIf ws.Cells(i, "C").Value = "nonindexable_urls_in_sitemap_inlinks" Then
+            ws.Cells(i, "B").Copy ws.Cells(11, "E")
+        ElseIf ws.Cells(i, "C").Value = "sitemaps_orphan_urls" Then
+            ws.Cells(i, "B").Copy ws.Cells(12, "E")
+        ElseIf ws.Cells(i, "C").Value = "hreflang_incorrect_language_region_codes" Then
+            ws.Cells(i, "B").Copy ws.Cells(13, "E")
+        ElseIf ws.Cells(i, "C").Value = "hreflang_multiple_entries" Then
+            ws.Cells(i, "B").Copy ws.Cells(14, "E")
+        ElseIf ws.Cells(i, "C").Value = "hreflang_non200_hreflang_urls" Then
+            ws.Cells(i, "B").Copy ws.Cells(15, "E")
+        ElseIf ws.Cells(i, "C").Value = "hreflang_not_using_canonical" Then
+            ws.Cells(i, "B").Copy ws.Cells(16, "E")
+        ElseIf ws.Cells(i, "C").Value = "canonicals_nonindexable_canonical" Then
+            ws.Cells(i, "B").Copy ws.Cells(17, "E")
+        ElseIf ws.Cells(i, "C").Value = "canonicals_missing" Then
+            ws.Cells(i, "B").Copy ws.Cells(18, "E")
+        ElseIf ws.Cells(i, "C").Value = "validation_missing_head_tag" Then
+            ws.Cells(i, "B").Copy ws.Cells(20, "E")
+        ElseIf ws.Cells(i, "C").Value = "validation_missing_body_tag" Then
+            ws.Cells(i, "B").Copy ws.Cells(21, "E")
+        ElseIf ws.Cells(i, "C").Value = "validation_multiple_head_tags" Then
+            ws.Cells(i, "B").Copy ws.Cells(22, "E")
+        ElseIf ws.Cells(i, "C").Value = "validation_multiple_body_tags" Then
+            ws.Cells(i, "B").Copy ws.Cells(23, "E")
+        ElseIf ws.Cells(i, "C").Value = "validation_head_not_first_in_html_element" Then
+            ws.Cells(i, "B").Copy ws.Cells(24, "E")
+        ElseIf ws.Cells(i, "C").Value = "validation_invalid_html_elements_in_head" Then
+            ws.Cells(i, "B").Copy ws.Cells(25, "E")
+        ElseIf ws.Cells(i, "C").Value = "validation_body_element_preceding_html" Then
+            ws.Cells(i, "B").Copy ws.Cells(26, "E")
+
+        ElseIf ws.Cells(i, "C").Value = "page_titles_multiple" Then
+            ws.Cells(i, "B").Copy ws.Cells(27, "E")
+        ElseIf ws.Cells(i, "C").Value = "page_titles_missing" Then
+            ws.Cells(i, "B").Copy ws.Cells(28, "E")
+        ElseIf ws.Cells(i, "C").Value = "page_titles_duplicate" Then
+            ws.Cells(i, "B").Copy ws.Cells(29, "E")
+        ElseIf ws.Cells(i, "C").Value = "meta_description_multiple" Then
+            ws.Cells(i, "B").Copy ws.Cells(30, "E")
+        ElseIf ws.Cells(i, "C").Value = "meta_description_missing" Then
+            ws.Cells(i, "B").Copy ws.Cells(31, "E")
+        ElseIf ws.Cells(i, "C").Value = "meta_description_duplicate" Then
+            ws.Cells(i, "B").Copy ws.Cells(32, "E")
+        ElseIf ws.Cells(i, "C").Value = "h1_multiple" Then
+            ws.Cells(i, "B").Copy ws.Cells(33, "E")
+        ElseIf ws.Cells(i, "C").Value = "h1_missing" Then
+            ws.Cells(i, "B").Copy ws.Cells(34, "E")
+        ElseIf ws.Cells(i, "C").Value = "h1_duplicate" Then
+            ws.Cells(i, "B").Copy ws.Cells(35, "E")
+
+
+        End If
+    Next i
+        Dim urlDictionary As Object
+    Set urlDictionary = CreateObject("Scripting.Dictionary")
+    
+End Sub
